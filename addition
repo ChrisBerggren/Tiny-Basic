@@ -1,0 +1,8 @@
+:10 input f
+:20 input s
+:30 let t = 0
+:40 t = t + f
+:50 f = f + 1
+:60 if f <= s then goto 40
+:70 print t
+:run
