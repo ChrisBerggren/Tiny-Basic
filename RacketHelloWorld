@@ -1,0 +1,19 @@
+;1
+(define (sayHello name)
+  (display (string-append "hello, " name)))
+
+;2
+(define (findMax lst)
+  (let ((max (findMax (cdr lst))))
+    (if (> (car lst) max)
+        (car lst) max)))
+
+;3
+(define (findMaxLinked lst)
+  (cond ((null? lst) #f)
+        ((not (pair? lst)) lst) (else (let* ((flat (flatten lst))
+                     (max (listMax flat))) max))))
+
+;4
+(define (lensort a b)
+  (< (length a) (length b)))
