@@ -1,0 +1,183 @@
+from ply.lex import lex
+from ply.yacc import yacc
+# helper func for reading in tiny basic example files
+ 
+ def readFile(filename): print('\nREADING FILE', filename) with open(filename, 'r') as file:
+return file.read()
+# --- Tokenizer
+# All tokens must be named in advance.
+# TODO: FILL IN THE MISSING TOKEN NAMES BELOW
+# HINT: LOOK AT THE MATCHING RULES TO SEE THE NAMES YOU SHOULD USE AFTER THE t_
+tokens = ('PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'LPAREN', 'RPAREN', 'CR',
+'VAR', 'NUMBER', 'EQUALS', 'RELOP', 'COMMA', 'STRING')
+# name is not a real token, but we have to use it to prevent var from matching on the first char of all our keywords
+# Ignored characters
+t_ignore = ' \t'
+# Token matching rules are written as regexs
+t_PLUS = r'\+'
+t_MINUS = r'-'
+t_TIMES = r'\*'
+t_DIVIDE = r'/'
+t_LPAREN = r'\('
+t_RPAREN = r'\)'
+t_EQUALS = r'='
+t_COMMA = r','
+t_RELOP = r'((<[>=]?)|(>[<=]?))' # don't include equals by itself so that it matches separately when not part of relop
+t_CR = r'[(\r|\n)(\r|\n)*]' # one or more newline characters all get collapsed into a single CR # because these strings HAVE to start/end with a quote, they should not match any of our keywords
+t_STRING = r'\"([^"]|\\")*\"'
+# TODO fill in the missing keywords in the list below ...
+reserved = { 'print' : 'PRINT', 'if' : 'IF',
+'then' : 'THEN', 'end' : 'END'
+}
+def t_VAR(t):
+r'[a-zA-Z_][a-zA-Z0-9_]*'
+# scan through all the reserved words and update the type
+t_lower = t.value.lower()
+t.type = reserved.get(t.value.lower(), 'VAR') if t.type == 'VAR' and len(t.value)>1:
+print("var names can only be one character!")
+
+ return t
+# A function can be used if there is an associated action. # Write the matching regex in the docstring.
+def t_NUMBER(t):
+r'\d+'
+t.value = int(t.value) return t
+# Error handler for illegal characters
+def t_error(t):
+print(f'Illegal character {t.value[0]!r}') t.lexer.skip(1)
+# Build the lexer object
+lexer = lex()
+# --- Parser
+# Write functions for each grammar rule which is # specified in the docstring.
+def p_program(p):
+'''
+program : linelist '''
+p[0] = p[1]
+def p_linelist_single(p): '''
+linelist : line '''
+p[0] = (p[1])
+def p_linelist_multiple(p): '''
+linelist : line linelist '''
+p[0] = (p[1]) + p[2]
+def p_line(p): '''
+line : NUMBER statement CR '''
+p[0] = ('line', p[1], p[2])
+def p_statement_print(p): '''
+statement : PRINT exprlist '''
+p[0] = ('print', p[2])
+def p_statement_input(p): '''
+
+ statement : INPUT varlist '''
+p[0] = ('input', p[2])
+# TODO: add production rules for varlist
+# HINT: you will new TWO separate production rules, one for just a single var, and another for multiple vars separated by a comma
+# ANOTHER HINT: look at the linelist production rules above as an example
+def p_varlist_single(p):
+# replace the pass line below with your code including the ''' docstring ''' for the grammar rule for a varlist
+# HINT: after the docstring you need to designate a var using a tuple ... p[0] = ('var', p[1])
+pass
+def p_varlist_multi(p):
+# replace the pass line below with your code including the ''' docstring ''' for the grammar rule for a varlist
+# HINT: after the docstring you need to concatenate (i.e, + ) the current var with the varlist ... p[0] = ('var', p[1]) + p[3]
+pass
+def p_statement_let(p):
+'''
+statement : LET VAR EQUALS expression '''
+p[0] = ('let', p[2], p[4])
+def p_statement_if(p): '''
+statement : IF expression RELOP expression THEN statement '''
+p[0] = ('if', p[2], p[3], p[4], p[6])
+def p_statement_if_equals(p): '''
+statement : IF expression EQUALS expression THEN statement '''
+p[0] = ('if', p[2], p[3], p[4], p[6])
+# TODO: add production rule for GOTO
+def p_statement_goto(p):
+# replace the pass line below with your lines of code including the ''' docstring ''' for the grammar rule for a GOTO statement
+# HINT: you will need to set p[0] to a tuple with the word 'goto' as the first member and the NUMBER as the second member
+pass
+# TODO: add production rule for GOSUB
+def p_statement_gosub(p):
+# replace the pass line below with your lines of code including the ''' docstring ''' for the grammar rule for a GOSUB statement
+
+ # HINT: you will need to set p[0] to a tuple with the word 'gosub' as the first member and the NUMBER as the second member
+pass
+# TODO: add production rule for RETURN
+def p_statement_return(p):
+# replace the pass line below with your code including the ''' docstring ''' for the grammar rule for a RETURN statement
+# HINT: you can set p[0] to a tuple with just the word 'return' in it ... but make sure it's a tuple
+pass
+# TODO: add production rule for END
+def p_statement_end(p):
+# replace the pass line below with your code including the ''' docstring ''' for the grammar rule for an END statement
+# HINT: you can set p[0] to a tuple with just the word 'end' in it ... but make sure it's a tuple
+pass
+# HINT: expressions were hard so I've done everything else for you already below
+def p_exprlist_single(p): '''
+exprlist : expressionOrString '''
+p[0] = p[1]
+def p_exprlist_multi(p): '''
+exprlist : expressionOrString COMMA exprlist '''
+p[0] = (p[1]) + (p[3])
+def p_expressionOrString_expr(p): '''
+expressionOrString : expression '''
+p[0] = p[1]
+def p_expressionOrString_str(p): '''
+expressionOrString : STRING '''
+p[0] = ('string', p[1])
+# expression ::= (+|-|ε) term ((+|-) term)*
+def p_expression_termlist(p): '''
+expression : termlist '''
+p[0] = p[1]
+def p_expression_termslistu(p): '''
+
+ expression : PLUS termlist | MINUS termlist
+'''
+p[0] = ('unary', p[1], p[2])
+def p_expression_termlist_single(p):
+'''
+termlist : term '''
+p[0] = p[1]
+def p_expression_termlist_multi(p): '''
+termlist : term PLUS termlist | term MINUS termlist
+'''
+p[0] = (p[2], p[1], p[3])
+# term ::= factor ((*|/) factor)*
+def p_term(p): '''
+term : factorlist '''
+p[0] = p[1]
+def p_factorlist_single(p): '''
+factorlist : factor '''
+p[0] = p[1]
+def p_factorlist_multi(p): '''
+factorlist : factor TIMES factorlist | factor DIVIDE factorlist
+'''
+p[0] = (p[2], p[1], p[3])
+# factor ::= var | number | (expression)
+def p_factor_var(p): '''
+factor : VAR
+'''
+p[0] = ('var', p[1])
+def p_factor_num(p): '''
+factor : NUMBER
+'''
+p[0] = ('number', p[1])
+
+def p_factor_grouped(p): '''
+factor : LPAREN expression RPAREN '''
+p[0] = ('grouped', p[1])
+def p_error(p):
+print(f'Syntax error at {p.value!r}')
+# Build the parser
+parser = yacc()
+# THERE IS NO NEED TO MODIFY ANY OF THE CODE BELOW ... BUT IF IT ISN'T WORKING MAKE SURE YOU HAVE MOUNTED YOUR GOOGLE DRIVE
+# AND CREATED A SUBFOLDER NAMED tb AND ADDED ALL THE EXAMPLE PROGRAMS FROM THE COMMENT AT THE TOP OF THIS FILE
+# Let's parse some valid programs
+# You must FIRST create these programs on your google drive in a subfolder named "tb" program1 = readFile('/content/drive/MyDrive/tb/example1.bas')
+ast = parser.parse(program1)
+print(ast)
+program2 = readFile('/content/drive/MyDrive/tb/example2.bas')
+ast = parser.parse(program2)
+print(ast)
+# Now try an invalid program
+program3 = readFile('/content/drive/MyDrive/tb/example3.bas')
+ast = parser.parse(program3)
+print(ast)
